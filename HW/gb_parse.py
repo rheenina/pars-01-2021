@@ -2,7 +2,6 @@ from urllib.parse import urljoin
 
 import bs4
 import requests
-from dotenv import load_dotenv
 
 from database import Database
 
@@ -89,7 +88,6 @@ class GbParse:
 
 
 if __name__ == "__main__":
-    load_dotenv(".env")
     db_url = 'sqlite:///db_blog.db'
     parser = GbParse("https://geekbrains.ru/posts", Database(db_url))
     parser.run()
