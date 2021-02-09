@@ -10,3 +10,33 @@ class GbParseItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
     pass
+
+
+class AutoyoulaItem(scrapy.Item):
+    _id = scrapy.Field()
+    url = scrapy.Field()
+    title = scrapy.Field()
+    images = scrapy.Field()
+    description = scrapy.Field()
+    author = scrapy.Field()
+    specifications = scrapy.Field()
+    price = scrapy.Field()
+
+
+class HHVacancyItem(scrapy.Item):
+    _id = scrapy.Field()
+    url = scrapy.Field()
+    title = scrapy.Field()
+    salary = scrapy.Field()
+    description = scrapy.Field()
+    skills = scrapy.Field()
+    company_url = scrapy.Field()
+
+
+class EmployerItem(scrapy.Item):
+    _id = scrapy.Field()
+    emp_name = scrapy.Field()
+    url = scrapy.Field()
+    area_of_activity = scrapy.Field()
+    emp_description = scrapy.Field()
+    emp_vacancy_offer = scrapy.Field()
