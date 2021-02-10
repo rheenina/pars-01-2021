@@ -1,7 +1,7 @@
 import datetime as dt
 import json
 import scrapy
-from ..items import InstaTag, InstaPost
+from ..items import InstaTag, InstaPost, InstaFollow, InstaUser
 
 
 class InstSpider(scrapy.Spider):
@@ -18,6 +18,9 @@ class InstSpider(scrapy.Spider):
 
     def __init__(self, login, password, tags: list, *args, **kwargs):
         self.tags = tags
+        self.users = [
+            "teslamotors",
+        ]
         self.__login = login
         self.__enc_passwd = password
         super().__init__(*args, **kwargs)
@@ -40,6 +43,50 @@ class InstSpider(scrapy.Spider):
                 for tag in self.tags:
                     tag_url = f'{self.tag_path}{tag}'
                     yield response.follow(tag_url, callback=self.tag_parse)
+
+    def user_page_parse(self, response):
+        user_data = self.js_data_extract(response)["entry_data"]["ProfilePage"][0]["graphql"][
+            "user"
+        ]
+        yield InstaUser(date_parse=dt.datetime.utcnow(), data=user_data)
+
+        yield from self.get_api_follow_request(response, user_data)
+
+    def get_api_follow_request(self, response, user_data, variables=None):
+        if not variables:
+            variables = {
+                "id": user_data["id"],
+                "first": 100,
+            }
+        url = f'{self.api_url}?query_hash={self.query_hash["follow"]}&variables={json.dumps(variables)}'
+        yield response.follow(
+            url, callback=self.get_api_follow, cb_kwargs={"user_data": user_data}
+        )
+
+    def get_api_follow(self, response, user_data):
+        if b"application/json" in response.headers["Content-Type"]:
+            data = response.json()
+            yield from self.get_follow_item(
+                user_data, data["data"]["user"]["edge_follow"]["edges"]
+            )
+            if data["data"]["user"]["edge_follow"]["page_info"]["has_next_page"]:
+                variables = {
+                    "id": user_data["id"],
+                    "first": 100,
+                    "after": data["data"]["user"]["edge_follow"]["page_info"]["end_cursor"],
+                }
+                yield from self.get_api_follow_request(response, user_data, variables)
+
+    @staticmethod
+    def get_follow_item(user_data, follow_users_data):
+        for user in follow_users_data:
+            yield InstaFollow(
+                user_id=user_data["id"],
+                user_name=user_data["username"],
+                follow_id=user["node"]["id"],
+                follow_name=user["node"]["username"],
+            )
+            yield InstaUser(date_parse=dt.datetime.utcnow(), data=user["node"])
 
     def tag_parse(self, response):
         tag = self.js_data_extract(response)["entry_data"]["TagPage"][0]["graphql"]["hashtag"]
