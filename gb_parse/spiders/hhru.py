@@ -49,7 +49,10 @@ class HhruSpider(scrapy.Spider):
     def company_parse(self, response):
         loader = EmployerLoader(response=response)
         for key, val in self.company_xpath.items():
-            loader.add_xpath(key, val)
+            if key == 'url':
+                loader.add_value(key, response.url)
+            else:
+                loader.add_xpath(key, val)
 
         emp_vacancy_path = response.xpath('//a[@data-qa="employer-page__employer-vacancies-link"]/@href').get()
         yield response.follow(emp_vacancy_path, callback=self.__get_company_vacancies_urls)
